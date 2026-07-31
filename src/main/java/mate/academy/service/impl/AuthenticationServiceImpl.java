@@ -14,19 +14,18 @@ import mate.academy.util.HashUtil;
 public class AuthenticationServiceImpl implements AuthenticationService {
     @Inject
     private UserService userService;
-    
+
     @Override
     public User login(String email, String password) throws AuthenticationException {
         Optional<User> userFromDb = userService.findByEmail(email);
-        if (userFromDb.isEmpty()) {
-            throw new AuthenticationException("Can`t authenticate user. Wrong email");
+        if (userFromDb.isPresent()) {
+            User user = userFromDb.get();
+            String hashedPassword = HashUtil.hashPassword(password, user.getSalt());
+            if (user.getPassword().equals(hashedPassword)) {
+                return user;
+            }
         }
-        User user = userFromDb.get();
-        String hashedPassword = HashUtil.hashPassword(password, user.getSalt());
-        if (!user.getPassword().equals(hashedPassword)) {
-            throw new AuthenticationException("Can`t authenticate user. Wrong password");
-        }
-        return user;
+        throw new AuthenticationException("Can`t authenticate user. Incorrect login or password");
     }
 
     @Override
